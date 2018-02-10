@@ -1,39 +1,43 @@
-library(UsingR)
-source("nextword.R")
+library(tm)
 
-shinyServer(  
-    function(input, output) {    
-        lastSubmit<-0
-        helpText = "This app calculates the Investment, in terms of dollar amounts, after a few years.  It will provide the final amount, and the a graph throughout the years as your investment grows.  To run this, please enter the rate of return, the years to invest, and the initial investment in terms of dollars.  Values are automatically calculated upon hitting enter.  Note that it is limited to 1-50 years with a maximumn of $1M"
-        output$newInvestment <- renderPlot({ 
-            lastYear <- 2016 + input$years - 1
-            years = c(2016:lastYear)
-            dollars<-c(1:input$years)
-            
-            for (i in dollars) {
-                dollars[i] = input$startCash * (1+input$rate/100)^i
-            }
-            
-            names(dollars) <- years
-            barplot(dollars, xlab="Year", ylab="Dollar Amount", 
-                    col='lightblue', main="Dollar Amount per year")
-           
-        })
-        output$newFinal<-({
-            renderText({paste("Final Amount $", input$startCash * round((1+input$rate/100)^input$years, 2))})
-        })
+load("data2.RData")
 
-        output$helpText <- renderText({
-            if (input$help %% 2== 1) { isolate({HTML(helpText)})}
-        })
+pre <- function(str,n){
+        vs <- VectorSource(str)
+        db <- VCorpus(vs, readerControl = list(reader = readPlain, language = "en",load=TRUE))
+        db <- tm_map(db, tolower)
+        db <- tm_map(db, removePunctuation)
+        db <- tm_map(db, removeNumbers)
+        db <- tm_map(db, removeWords, profanity)
+        db <- tm_map(db, removeWords, stopwords("english"))
+        db <- tm_map(db, stemDocument)
+        db <- tm_map(db, stripWhitespace)
         
-        output$nextWord<-renderText({
-            if (input$submit > lastSubmit) {
-                lastSubmit = input$submit
-                return(processSentence(input$sentence, input$fast))
-            } 
-        })
+        content <- db$content[[1]]
+        temp <- tail(unlist(strsplit(content,split=" ")),n)
+        return(paste(temp,collapse =" "))
         
-    }
-    
+}
+
+topword <- function(str,n){
+        tail1 <- data2[grep(paste("^",pre(str,1)," ",sep=""),names(data2))]
+        topn <- names(sort(tail1,decreasing = T))[1:n]
+        sapply(strsplit(topn ,split=" "),function(x) x[2])
+}
+
+
+
+shinyServer(
+        function(input, output) {
+                output$topn = renderPrint({
+                        input$goButton
+                        isolate(topword(input$text1,input$n))
+                        })
+                
+                output$top1 = renderPrint({
+                        input$goButton
+                        isolate(topword(input$text1,1))
+                        })
+
+        }
 )

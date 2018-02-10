@@ -1,37 +1,20 @@
-shinyUI(fluidPage(
-    titlePanel("Word Prediction App"),
-    sidebarPanel(
-        h4("Predict the next word.."),
-        textInput("sentence", label=h3("Enter a sentence"), value=""),
-        actionButton("submit", "Submit"),
-        checkboxInput("fast", "Fast prediction (but less reliable)", TRUE)
-    ),
-
-    mainPanel(
-        tabsetPanel(type = "tabs", 
-            tabPanel("Prediction", mainPanel(
-                textOutput('nextWord')
-                )
-            ), 
-            tabPanel("Help/Explanation", mainPanel(
-                h2("Help"),
-                p("Enter a series of words in the search box to predict the next word"),
-                p("If you want a faster prediction, click the box labelled Fast Prediction"),
-                p("If reliability is more of a concern, uncheck that box.  By unchecking it,
-                  the algorithm will use more words and a more complex algorithm."),
-                h2("Explanation"),
-                p("Using a sample of text from blogs, twitter feeds, 
-                  and news, this takes in the next page and predicts the next word.  
-                  This sample is taken from SwiftKey.  And since computational power 
-                  is limited, only 10% of the sample is used."),
-                p("Prediction is done through looking at trigrams, bigrams, and unigrams, 
-                  using simple markov chains to determine the order"),
-                p("In addition, if Fast prediction is not selected, an additional 
-                   trigram search will be done on a consecutive n-gram to determine
-                   if previous words in the sentence yield better results.  This, unfrotunately,
-                   adds significant time (especially if the sentence is long), and is included
-                   as an option.")
-                )
-            )
-    )
-)))
+# load shiny package
+library(shiny)
+# begin shiny UI
+shinyUI(pageWithSidebar(
+        headerPanel("Smart prediction technology for easier mobile typing"),
+        sidebarPanel(
+                textInput(inputId="text1", label = "Please enter some words"),
+                numericInput('n', 'Define the number of words to show (top n words)', 5, min = 1, max = 10, step = 1),
+                actionButton("goButton", "Run!")
+        ),
+        mainPanel(
+                h3('Prediction result'),
+                p("The top n most likely words are shown below, and the top 1 would be the prediction result of the next word"),
+                h4('Show the top n most likely words'),
+                verbatimTextOutput("topn"),
+                h4('Prediction result of the next word'),
+                verbatimTextOutput("top1")
+                
+        )
+))
